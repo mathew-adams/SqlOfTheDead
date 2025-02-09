@@ -1,21 +1,15 @@
-﻿GO
-
-SET QUOTED_IDENTIFIER ON
-GO
-
-CREATE TABLE [dbo].[zombiefield](
-	[Id] [uniqueidentifier] NOT NULL,
-	[TableId] [uniqueidentifier] NOT NULL,
-	[Name] [nvarchar](30) NOT NULL,
-	[Type] [nvarchar](20) NOT NULL,
-	[Length] [nvarchar](20) NOT NULL,
-	[DefaultValue] [nvarchar](20) NOT NULL,
-	[AllowNulls] [bit] NOT NULL,
-	[IsIdentity] [bit] NOT NULL,
-	[Order] [int] NOT NULL,
- CONSTRAINT [idx_zombiefield_id] PRIMARY KEY CLUSTERED 
+﻿create table [zombiefield]
 (
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
+	[Id] uniqueidentifier not null,
+	[TableId] uniqueidentifier not null,
+	[Name] nvarchar(30) not null,
+	[Type] nvarchar(20) not null,
+	[Length] nvarchar(20) not null,
+	[DefaultValue] nvarchar(20) not null,
+	[AllowNulls] bit not null,
+	[IsIdentity] bit not null,
+	[Order] int not null,
+	[Version] rowversion not null,
+	constraint idx_zombiefield_id primary key clustered ([Id]),
+	index idx_zombiefield_tableid nonclustered ([TableId]),
+);

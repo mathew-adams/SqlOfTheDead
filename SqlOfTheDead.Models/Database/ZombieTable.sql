@@ -1,17 +1,7 @@
-﻿SET ANSI_NULLS ON
-GO
-
-SET QUOTED_IDENTIFIER ON
-GO
-
-CREATE TABLE [dbo].[zombietable](
-	[Id] [uniqueidentifier] NOT NULL,
-	[Name] [nvarchar](30) NOT NULL,
- CONSTRAINT [idx_zombietable_id] PRIMARY KEY CLUSTERED 
+﻿create table [zombietable]
 (
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-
-
+	[Id] uniqueidentifier not null,
+	[Name] nvarchar(30) not null,
+	[Version] rowversion not null,
+	constraint idx_zombietable_id primary key clustered ([Id]),
+);

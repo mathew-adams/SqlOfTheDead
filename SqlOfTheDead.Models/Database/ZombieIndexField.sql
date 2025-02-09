@@ -1,19 +1,10 @@
-﻿SET ANSI_NULLS ON
-GO
-
-SET QUOTED_IDENTIFIER ON
-GO
-
-CREATE TABLE [dbo].[zombieindexfield](
-	[Id] [uniqueidentifier] NOT NULL,
-	[IndexId] [uniqueidentifier] NOT NULL,
-	[Name] [nvarchar](20) NOT NULL,
-	[Order] [int] NOT NULL,
- CONSTRAINT [idx_zombieindexfield_id] PRIMARY KEY CLUSTERED 
+﻿create table [zombieindexfield]
 (
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-
-
+	[Id] uniqueidentifier not null,
+	[IndexId] uniqueidentifier not null,
+	[Name] nvarchar(20) not null,
+	[Order] int not null,
+	[Version] rowversion not null,
+	index idx_zombieindexfield_indexid nonclustered ([IndexId]),
+	constraint idx_zombieindexfield_id primary key clustered ([Id]),
+);
