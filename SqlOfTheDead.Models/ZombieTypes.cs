@@ -27,12 +27,11 @@ public static class ZombieTypes
 
     public static IEnumerable<ZombieField> GetFieldTemplate(Guid tableId)
     {
-        yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Key", Type = "Integer", IsIdentity = true, Order = 0 };
-        yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Secondary_Key", Type = "Integer", Order = 1 };
-        yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Id", Type = "Guid", Order = 2 };
-        yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Name", Type = "String", Length = "10", Order = 3 };
-        yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Created", Type = "Date", Length = "7", DefaultValue = "'9999-12-31'", Order = 4 };
-        yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Active", Type = "Boolean", DefaultValue = "1", Order = 5 };
+        yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Id", Type = "Integer", IsIdentity = true, Order = 0 };
+        yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Secondary_Id", Type = "Integer", Order = 1 };
+        yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Name", Type = "String", Length = "10", Order = 2 };
+        yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Created", Type = "Date", Length = "7", DefaultValue = "'9999-12-31'", Order = 3 };
+        yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Active", Type = "Boolean", DefaultValue = "1", Order = 4 };
     }
 
     public static SqlDbType GetSqlDbType(string name)
