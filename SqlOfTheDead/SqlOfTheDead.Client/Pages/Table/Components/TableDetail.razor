@@ -1,0 +1,85 @@
+﻿@using SqlOfTheDead.Models;
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="form">
+            <MudGrid>
+                <MudItem lg="3" md ="4" sm="8">
+                    <MudTextField T="string" Required
+                    Label="Table Name"
+                    Variant="Variant.Outlined"
+                    @bind-Value="@Table.Name"
+                    Validation="@(new Func<string, IEnumerable<string>>(ValidateName))" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+
+        <MudTabs Outlined="true" Position="MudBlazor.Position.Top" Rounded="true" Border="true"
+        ApplyEffectsToContainer="true" PanelClass="pa-6" KeepPanelsAlive=true>
+            <MudTabPanel 
+            Icon="@Icons.Material.Filled.List" 
+            BadgeData=@(AreFieldsValid ? null : "!")
+            BadgeColor="Color.Error"
+            Text="Fields">
+                <FieldList @bind-AreFieldsValid=AreFieldsValid Table="@Table" />
+            </MudTabPanel>
+            <MudTabPanel 
+            Icon="@Icons.Material.Filled.Key"
+            BadgeData=@(AreIndexesValid ? null : "!")
+            BadgeColor="Color.Error"
+            Text="Indexes">
+                <IndexList @bind-AreIndexesValid=AreIndexesValid Table="@Table" />
+            </MudTabPanel>
+        </MudTabs>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    #region Parameters
+    [CascadingParameter]
+    public IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public ZombieTable Table { get; set; } = new();
+    #endregion
+
+    #region State
+    MudForm form;
+
+    bool AreFieldsValid;
+    bool AreIndexesValid;
+    #endregion
+
+    #region Validation
+    public IEnumerable<string> ValidateName(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            yield return "Table name is required";
+            yield break;
+        }
+        char first = name[0];
+        if (char.IsNumber(first)) yield return "First character cannot be numeric";
+        if (char.IsPunctuation(first)) yield return "First character cannot be a special character";
+        if (name.Length < 4) yield return "Table name should be at least 4 characters";
+        if (name.Any(a => char.IsWhiteSpace(a))) yield return "Table name cannot contain whitespace";
+    }
+    #endregion
+
+    #region Dialog
+    private void Submit()
+    {
+        form.Validate();
+        if (!form.IsValid) return;
+        if (!AreFieldsValid) return;
+        if (!AreIndexesValid) return;
+
+        MudDialog.Close(DialogResult.Ok(Table));
+    }
+    private void Cancel() => MudDialog.Cancel();
+    #endregion
+}

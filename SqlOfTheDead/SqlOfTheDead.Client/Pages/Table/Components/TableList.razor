@@ -1,0 +1,142 @@
+﻿@using SqlOfTheDead.Models;
+@using SqlOfTheDead.Client.Layout;
+
+@inject IDialogService DialogService
+@inject IZombieTable data
+
+<MudStack Row="true" Justify="Justify.FlexStart" Class="mb-4">
+    <MudButton Variant="Variant.Filled" title="Add new table" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.Add" OnClick="@((e) => Add())">Add</MudButton>
+    <MudButton Variant="Variant.Filled" title="Generate table creation script" StartIcon="@Icons.Material.Outlined.AutoAwesome" OnClick="@((e) => Script())">Script</MudButton>
+    <MudButton Variant="Variant.Filled" title="Load tables from database" StartIcon="@Icons.Material.Outlined.Upload" OnClick="@((e) => Load())">Load</MudButton>
+</MudStack>
+
+<MudSimpleTable Dense="true" Hover="true" Bordered="true" Style="overflow-x: auto;" Class="mb-3">
+    <thead>
+        <tr>
+            <th>Table Name</th>
+            <th>Fields</th>
+            <th>Indexes</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var table in Tables)
+        {
+            <tr>
+                <td>@table.Name</td>
+                <td>@(@table.Fields.Count())</td>
+                <td>@(@table.Indexes.Count())</td>
+                <td width="10"><MudIconButton Size="Size.Small" title="Save to database" Icon="@Icons.Material.Filled.Save" aria-label="Edit" OnClick="() => Save(table)" /></td>
+                <td width="15"><MudIconButton Size="Size.Small" title="Delete from database" Icon="@Icons.Material.Filled.Delete" Disabled="@DisableDelete(table.Id)" aria-label="Delete" OnClick="() => Delete(table)" /></td>
+                <td width="10"><MudIconButton Size="Size.Small" title="Edit table" Icon="@Icons.Material.Filled.Edit" aria-label="Edit" OnClick="() => Edit(table)" /></td>
+                <td width="15"><MudIconButton Size="Size.Small" title="Remove from list" Icon="@Icons.Material.Filled.RemoveCircleOutline" aria-label="Delete" OnClick="() => Remove(table)" /></td>
+            </tr>
+        }
+    </tbody>
+</MudSimpleTable>
+
+<MudTextField T="string"
+AutoGrow="true"
+Label="Build script"
+Variant="Variant.Outlined"
+@bind-Value="@Sql" />
+
+@code {
+    #region State
+    public List<ZombieTable> Tables = [];
+    public HashSet<Guid> Ids = [];
+    public string Sql = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshDatabaseState();
+    }
+    #endregion
+
+    #region Behavior
+    public async Task Add()
+    {
+        var parms = new DialogParameters<TableDetail>()
+        {
+            {x => x.Table, new ZombieTable(){ Id = Guid.CreateVersion7() } }
+        };
+
+        var dialog = await DialogService.ShowAsync<TableDetail>("Add Table", parms, UI.DialogFullWidth);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            Tables.Add((ZombieTable)result.Data!);
+            StateHasChanged();
+        }
+    }
+
+    public async Task Edit(ZombieTable table)
+    {
+        var parms = new DialogParameters<TableDetail>()
+        {
+            {x => x.Table, table}
+        };
+        var dialog = await DialogService.ShowAsync<TableDetail>("Edit Table", parms, UI.DialogFullWidth);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled) StateHasChanged();
+    }
+
+    public async Task Remove(ZombieTable table)
+    {
+        bool? result = await DialogService.ShowMessageBox("Warning",
+                                                          "Unless saved, removing cannot be undone!",
+                                                          yesText: "Remove",
+                                                          cancelText: "Cancel");
+        if (result.HasValue && result.Value)
+        {
+            Tables.Remove(table);
+            StateHasChanged();
+        }
+    }
+
+    public async Task Save(ZombieTable table)
+    {
+        await data.AddTable(table);
+        await RefreshDatabaseState();
+    }
+
+    public bool DisableDelete(Guid id) => !Ids.Contains(id);
+    public async Task Delete(ZombieTable table)
+    {
+        await data.DeleteTable(table.Id);
+        await Remove(table);
+    }
+
+    public void Script()
+    {
+        Sql = "";
+        foreach (var table in Tables)
+        {
+            Sql += ZombieTypes.GetScript(table);
+        }
+    }
+
+    public async Task Load()
+    {
+        var dialog = await DialogService.ShowAsync<TableLoad>("Load Tables", UI.DialogFullWidth);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            Tables = (List<ZombieTable>)result.Data!;
+            StateHasChanged();
+        }
+    }
+
+    public async Task RefreshDatabaseState()
+    {
+        Ids = await data.GetTableIds();
+        StateHasChanged();
+    }
+
+    #endregion
+}

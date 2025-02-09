@@ -1,0 +1,141 @@
+﻿@using SqlOfTheDead.Models;
+@using SqlOfTheDead.Client.Layout;
+@inject IDialogService DialogService
+
+<MudStack Row="true" Justify="Justify.FlexStart" Class="mb-4">
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.Add" OnClick="@((e) => Add())">Add</MudButton>
+    <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Outlined.Reorder" OnClick="@((e) => Reorder())">Reorder</MudButton>
+    <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Outlined.AutoAwesome" OnClick="@((e) => Default())">Default</MudButton>
+</MudStack>
+<MudSimpleTable Dense="true" Hover="true" Bordered="true" Style="overflow-x: auto;">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Length</th>
+            <th>Default value</th>
+            <th>Allow nulls</th>
+            <th>Identity</th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var field in Table.Fields)
+        {
+            <tr>
+                <td>@field.Name</td>
+                <td>@field.Type</td>
+                <td>@field.Length</td>
+                <td>@field.DefaultValue</td>
+                <td><MudCheckBox Dense="true" @bind-Value="@field.AllowNulls" Disabled="true"></MudCheckBox></td>
+                <td><MudCheckBox Dense="true" @bind-Value="@field.IsIdentity" Disabled="true"></MudCheckBox></td>
+                <td width="10"><MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Edit" aria-label="Edit" OnClick="() => Edit(field)" /></td>
+                <td width="15"><MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Delete" aria-label="Delete" OnClick="() => Delete(field)" /></td>
+            </tr>
+        }
+    </tbody>
+</MudSimpleTable>
+
+@code {
+    #region Parameters
+    [Parameter]
+    public ZombieTable Table { get; set; } = new();
+
+    [Parameter]
+    public bool AreFieldsValid { get; set; } = true;
+
+    [Parameter]
+    public EventCallback<bool> AreFieldsValidChanged { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ValidateFields();
+    }
+
+    #endregion
+
+    #region Behavior
+    private async Task ValidateFields()
+    {
+        AreFieldsValid = Table.Fields.Count() > 0;
+        await AreFieldsValidChanged.InvokeAsync(AreFieldsValid);
+    }
+
+    private async Task Add()
+    {
+        var parms = new DialogParameters<FieldDetail>()
+        {
+            {x => x.Field, new ZombieField() { Id = Guid.CreateVersion7(), TableId = Table.Id } },
+            {x => x.Table, Table}
+        };
+        var dialog = await DialogService.ShowAsync<FieldDetail>("Add Field", parms, UI.DialogFullWidth);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled)
+        {
+            Table.Fields.Add((ZombieField)result.Data!);
+            await ValidateFields();
+            StateHasChanged();
+        }
+    }
+
+    private async Task Edit(ZombieField field)
+    {
+        var parms = new DialogParameters<FieldDetail>()
+        {
+            {x => x.Field, field},
+            {x => x.Table, Table}
+        };
+        var dialog = await DialogService.ShowAsync<FieldDetail>("Edit Field", parms, UI.DialogFullWidth);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled) 
+        {
+            await ValidateFields();
+            StateHasChanged();
+        }
+    }
+
+    private async Task Delete(ZombieField field)
+    {
+        if (Table.Indexes.Any(i => i.Fields.Any(f => f.Name == field.Name)))
+        {
+            await DialogService.ShowMessageBox("Indexed Field",
+                                                "This field exists on an index",
+                                                yesText: "OK, I will remove it!");
+            return;
+        }
+        bool? result = await DialogService.ShowMessageBox("Warning",
+                                                         "Deleting can not be undone!",
+                                                         yesText: "Delete!",
+                                                         cancelText: "Cancel");
+        if (result.HasValue && result.Value)
+        {
+            Table.Fields.Remove(field);
+            await ValidateFields();
+            StateHasChanged();
+        }
+    }
+
+    private async Task Reorder()
+    {
+        var parms = new DialogParameters<FieldReorder>()
+        {
+            {x => x.Table, Table}
+        };
+        var dialog = await DialogService.ShowAsync<FieldReorder>("Reorder Fields", parms, UI.DialogFullWidth);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled) StateHasChanged();
+    }
+
+    private async Task Default()
+    {
+        foreach (var field in ZombieTypes.GetFieldTemplate(Table.Id))
+        {
+            if (Table.Fields.Any(a => a.Name == field.Name)) continue;
+            Table.Fields.Add(field);
+        }
+        await ValidateFields();
+    }
+
+    #endregion
+}

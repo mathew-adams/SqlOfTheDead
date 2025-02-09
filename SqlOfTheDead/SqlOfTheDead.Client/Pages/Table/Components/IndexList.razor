@@ -1,0 +1,111 @@
+﻿@using SqlOfTheDead.Models;
+@using SqlOfTheDead.Client.Layout;
+@inject IDialogService DialogService
+
+<MudStack Row="true" Justify="Justify.FlexStart" Class="mb-4">
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.Add" OnClick="@((e) => Add())">Add</MudButton>
+</MudStack>
+<MudSimpleTable Dense="true" Hover="true" Bordered="true" Style="overflow-x: auto;">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Primary</th>
+            <th>Unique</th>
+            <th>Clustered</th>
+            <th>Non-Clustered</th>
+            <th>Columns</th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var index in Table.Indexes)
+        {
+            <tr>
+                <td>@index.Name</td>
+                <td><MudCheckBox Dense="true" @bind-Value="@index.Primary" Disabled="true"></MudCheckBox></td>
+                <td><MudCheckBox Dense="true" @bind-Value="@index.Unique" Disabled="true"></MudCheckBox></td>
+                <td><MudCheckBox Dense="true" @bind-Value="@index.Clustered" Disabled="true"></MudCheckBox></td>
+                <td><MudCheckBox Dense="true" @bind-Value="@index.NonClustered" Disabled="true"></MudCheckBox></td>
+                <td>@(string.Join(", ", index.Fields.Select(s => s.Name)))</td>
+                <td width="10"><MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Edit" aria-label="Edit" OnClick="() => Edit(index)" /></td>
+                <td width="15"><MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Delete" aria-label="Delete" OnClick="() => Delete(index)" /></td>
+            </tr>
+        }
+    </tbody>
+</MudSimpleTable>
+
+@code {
+    #region Parameters
+    [Parameter]
+    public ZombieTable Table { get; set; } = new();
+
+    [Parameter]
+    public bool AreIndexesValid { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> AreIndexesValidChanged { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ValidateIndexes();
+    }
+
+    #endregion
+
+    #region Validation
+    public async Task ValidateIndexes()
+    {
+        AreIndexesValid = Table.Indexes.Count() > 0 && Table.Indexes.Any(a => a.Primary);
+        await AreIndexesValidChanged.InvokeAsync(AreIndexesValid);
+    }
+    #endregion
+
+    #region Behavior
+    public async Task Add()
+    {
+        var parms = new DialogParameters<IndexDetail>()
+        {
+            {x => x.Index, new ZombieIndex() { Id = Guid.CreateVersion7(), TableId = Table.Id } },
+            {x => x.Table, Table}
+        };
+        var dialog = await DialogService.ShowAsync<IndexDetail>("Add Index", parms, UI.DialogFullWidth);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled)
+        {
+            Table.Indexes.Add((ZombieIndex)result.Data!);
+            await ValidateIndexes();
+            StateHasChanged();
+        }
+    }
+    public async Task Edit(ZombieIndex index)
+    {
+        var parms = new DialogParameters<IndexDetail>()
+        {
+            {x => x.Index, index},
+            {x => x.Table, Table},
+        };
+
+        var dialog = await DialogService.ShowAsync<IndexDetail>("Edit Index", parms, UI.DialogFullWidth);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled)
+        {
+            await ValidateIndexes();
+            StateHasChanged();
+        }
+    }
+    public async Task Delete(ZombieIndex index)
+    {
+        bool? result = await DialogService.ShowMessageBox("Warning",
+                                                  "Deleting can not be undone!",
+                                                  yesText: "Delete!",
+                                                  cancelText: "Cancel");
+        if (result.HasValue && result.Value)
+        {
+            Table.Indexes.Remove(index);
+            await ValidateIndexes();
+            StateHasChanged();
+        }
+    }
+    #endregion
+}

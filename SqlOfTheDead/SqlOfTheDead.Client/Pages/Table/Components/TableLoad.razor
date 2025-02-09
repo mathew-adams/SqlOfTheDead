@@ -1,0 +1,57 @@
+﻿@using SqlOfTheDead.Models;
+@inject IZombieTable service;
+
+<MudDialog>
+    <DialogContent>
+        <MudTable @ref="_table" T="ZombieTable" Items="@Tables" MultiSelection="true" SelectionChangeable="true" Hover="true"
+        @bind-SelectedItems="selectedItems" SelectOnRowClick="true">
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh>Fields</MudTh>
+                <MudTh>Indexes</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">@context.Name</MudTd>
+                <MudTd DataLabel="Fields">@(@context.Fields.Count())</MudTd>
+                <MudTd DataLabel="Indexes">@(@context.Indexes.Count())</MudTd>
+            </RowTemplate>
+            <FooterContent>
+                <MudTd colspan="5">Select All</MudTd>
+            </FooterContent>
+        </MudTable>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    #region Parameters
+    [CascadingParameter]
+    public IMudDialogInstance MudDialog { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Tables = await service.GetTables();
+        StateHasChanged();
+    }
+
+    #endregion
+
+    #region State
+    private MudTable<ZombieTable> _table;
+    public List<ZombieTable> Tables { get; set; } = [];
+    private HashSet<ZombieTable> selectedItems = new HashSet<ZombieTable>();
+    #endregion
+
+    #region Dialog
+    private async Task Submit()
+    {
+        if (selectedItems.Count() == 0) return;
+        MudDialog.Close(DialogResult.Ok(selectedItems.ToList()));
+    }
+    private void Cancel() => MudDialog.Cancel();
+    #endregion
+}

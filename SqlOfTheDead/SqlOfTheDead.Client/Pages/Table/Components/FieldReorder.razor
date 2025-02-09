@@ -1,0 +1,65 @@
+﻿@using SqlOfTheDead.Models;
+
+
+<MudDialog>
+    <DialogContent>
+        <MudDropContainer T="ZombieField"
+                          Items="@Table.Fields"
+                          ItemsSelector="@((_,_) => true)"
+                          ItemDropped="ItemUpdated"
+                          @ref="_container"
+                          Class="d-flex flex-wrap flex-grow-1">
+            <ChildContent>
+                <MudPaper Class="ma-4 flex-grow-1">
+                    <MudList T="string" Class="d-flex flex-column mud-height-full">
+                        <MudListSubheader>Available</MudListSubheader>
+                        <MudDropZone T="ZombieField" Identifier="Available" Class="flex-grow-1" AllowReorder="true" />
+                    </MudList>
+                </MudPaper>
+            </ChildContent>
+            <ItemRenderer>
+                <MudListItem T="string" Text="@context.Name" />
+            </ItemRenderer>
+        </MudDropContainer>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    #region Parameters
+    [CascadingParameter]
+    public IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public ZombieTable Table { get; set; } = new();
+    #endregion
+
+    #region State
+    private MudDropContainer<ZombieField> _container;
+    #endregion
+
+    #region Validation
+    private void ItemUpdated(MudItemDropInfo<ZombieField> dropItem)
+    {
+        var indexOld = Table.Fields.IndexOf(dropItem.Item!);
+        Table.Fields.RemoveAt(indexOld);
+        Table.Fields.Insert(dropItem.IndexInZone, dropItem.Item!);
+    }
+    #endregion
+
+    #region Behavior
+    #endregion
+
+    #region Dialog
+    public void Submit()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+    public void Cancel() => MudDialog.Cancel();
+    #endregion
+
+}

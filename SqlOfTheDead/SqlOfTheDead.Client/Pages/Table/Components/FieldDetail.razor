@@ -1,0 +1,118 @@
+﻿@using SqlOfTheDead.Models;
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="form">
+            <MudTextField T="string" Required Label="Field Name" Variant="Variant.Outlined" @bind-Value="@Field.Name" Validation="@(new Func<string, IEnumerable<string>>(ValidateName))" />
+            <MudSelect 
+            @bind-Value="@SelectedType"
+            @bind-Value:after="OnTypeValueChanged"
+            Variant="Variant.Outlined" 
+            Label="Type" T="string" 
+            Required>
+                @foreach (var typ in ZombieTypes.GetTypes())
+                {
+                    <MudSelectItem Value="@typ.Name">@typ.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField T="string" Label="Length" Disabled="@DisableLength" Variant="Variant.Outlined" @bind-Value="@Field.Length" />
+            <MudTextField T="string" Label="Default value" Variant="Variant.Outlined" @bind-Value="@Field.DefaultValue" />
+            <MudCheckBox @bind-Value="@Field.AllowNulls" Label="Allow nulls"></MudCheckBox>
+            <MudCheckBox @bind-Value="@Field.IsIdentity" Label="Identity" Disabled="@DisableIdentity"></MudCheckBox>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+
+    #region Parameters
+    [CascadingParameter]
+    public IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public ZombieTable Table { get; set; } = new();
+
+    [Parameter]
+    public ZombieField Field { get; set; } = new();
+    #endregion
+
+    #region State
+    MudForm form;
+    bool DisableIdentity;
+    bool DisableLength;
+    string SelectedType;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        DisableIdentity = Table.Fields.Any(a => a.IsIdentity && a.Id != Field.Id);
+        SelectedType = Field.Type;
+        Field.Type = "";//Force a revalidation
+        OnTypeValueChanged();
+    }
+
+    #endregion
+
+    #region Validation
+    private void OnTypeValueChanged()
+    {
+        if(SelectedType != Field.Type)
+        {
+            DisableIdentity = !ZombieTypes.CanBeIdentity(SelectedType) ||
+                                Table.Fields.Any(a => a.IsIdentity && a.Id != Field.Id);
+
+            var type = ZombieTypes.GetTypes().Where(x => x.Name == SelectedType).First();
+            Field.DefaultValue = type.DefaultValue;
+
+            if(ZombieTypes.HasLength(SelectedType))
+            {
+                DisableLength = false;
+                Field.Length = type.DefaultLength;
+            }
+            else
+            {
+                DisableLength = true;
+                Field.Length = "";
+            }
+        }
+
+        Field.Type = SelectedType;
+    }
+
+    public IEnumerable<string> ValidateName(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            yield return "Field name is required";
+            yield break;
+        }
+
+        char first = name[0];
+        if (char.IsNumber(first)) yield return "First character cannot be numeric";
+        if (char.IsPunctuation(first)) yield return "First character cannot be a special character";
+        if (!char.IsUpper(first)) yield return "First character must be upper case";
+        if (name.Any(a => char.IsWhiteSpace(a))) yield return "Table name cannot contain whitespaces";
+
+        if (Table.Fields.Any(a => a.Name.Equals(name, StringComparison.OrdinalIgnoreCase) && a.Id != Field.Id))
+            yield return "Field name already exists";
+    }
+    #endregion
+
+    #region Behavior
+    #endregion
+
+    #region Dialog
+    private async Task Submit()
+    {
+        await form.Validate();
+        if (!form.IsValid) return;
+        MudDialog.Close(DialogResult.Ok(Field));
+    }
+
+    public void Cancel() => MudDialog.Cancel();
+    #endregion
+}

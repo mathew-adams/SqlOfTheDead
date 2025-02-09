@@ -1,0 +1,36 @@
+﻿@using SqlOfTheDead.Models;
+
+<MudDialog Style="width: 400px;">
+    <DialogContent>
+        <MudForm @ref="form">
+            <MudTextField T="string"
+                          Required Label="Connection String"
+                          Variant="Variant.Outlined"
+                          @bind-Value="@Options.ConnectionString"
+                          Validation="@(new Func<string, IEnumerable<string>>(Options.ValidateConnection))" />
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public IMudDialogInstance MudDialog { get; set; }
+
+    public ZombieSettings Options { get; set; } = new();
+
+    MudForm form;
+
+    public void Submit()
+    {
+        form.Validate();
+        if (!form.IsValid) return;
+        MudDialog.Close(DialogResult.Ok(true));//TODO: send data back?
+    }
+
+    public void Cancel() => MudDialog.Cancel();
+}

@@ -1,0 +1,34 @@
+﻿@using SqlOfTheDead.Client.Layout;
+@inject IDialogService DialogService
+
+<MudMenu Icon="@Icons.Material.Filled.MoreVert">
+    <MudMenuItem OnClick="Settings">Settings</MudMenuItem>
+</MudMenu>
+
+@code {
+    #region Parameters
+    #endregion
+
+    #region State
+    #endregion
+
+    #region Validation
+    #endregion
+
+    #region Behavior
+    private async Task Settings()
+    {
+        var dialog = await DialogService.ShowAsync<SettingsOptions>("Settings", UI.DialogFullWidth);
+        var result = await dialog.Result;
+
+        if (result is not null && !result.Canceled)
+        {
+            //Tables.Add((ZombieTable)result.Data!);
+            StateHasChanged();
+        }
+    }
+    #endregion
+
+    #region Dialog
+    #endregion
+}

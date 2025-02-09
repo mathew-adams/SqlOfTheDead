@@ -1,0 +1,211 @@
+﻿@using SqlOfTheDead.Models;
+@using SqlOfTheDead.Client.Layout;
+
+<PageTitle>Add Index</PageTitle>
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="form">
+            <MudTextField T="string"
+            Label="Index Name"
+            Required
+            Variant="Variant.Outlined"
+            @bind-Value="@Index.Name"
+            Validation="@(new Func<string, IEnumerable<string>>(ValidateName))" />
+            <MudStack Row="true" Justify="Justify.FlexStart" Class="mb-4">
+                <MudCheckBox @bind-Value="@Index.Primary" Label="Primary" Disabled="@IsDisabledPrimary" Validation="@(new Func<bool, IEnumerable<string>>(ValidatePrimary))"></MudCheckBox>
+                <MudCheckBox @bind-Value="@Index.Unique" Label="Unique" Disabled="@IsDisabledUnique" Validation="@(new Func<bool, IEnumerable<string>>(ValidateUnique))"></MudCheckBox>
+                <MudCheckBox @bind-Value="@Index.Clustered" Label="Cluster" Disabled="@IsDisabledClustered" Validation="@(new Func<bool, IEnumerable<string>>(ValidateClustered))"></MudCheckBox>
+                <MudCheckBox @bind-Value="@Index.NonClustered" Label="Non-clustered" Validation="@(new Func<bool, IEnumerable<string>>(ValidateNonClustered))"></MudCheckBox>
+            </MudStack>
+            <MudDropContainer T="ZombieIndexField"
+            Items="@_fields"
+            ItemsSelector="ItemSelector"
+            ItemDropped="ItemUpdated"
+            @ref="_container"
+            Class="d-flex flex-wrap flex-grow-1">
+                <ChildContent>
+                    <MudPaper Class="ma-4 flex-grow-1">
+                        <MudList T="string" Class="d-flex flex-column mud-height-full">
+                            <MudListSubheader>Available</MudListSubheader>
+                            <MudDropZone T="ZombieIndexField" Identifier="Available" Class="flex-grow-1" AllowReorder="true" />
+                        </MudList>
+                    </MudPaper>
+                    <MudPaper Class="ma-4 flex-grow-1">
+                        <MudList T="string" Class="d-flex flex-column mud-height-full">
+                            <MudListSubheader>Selected</MudListSubheader>
+                            <MudDropZone T="ZombieIndexField" Identifier="Selected" Class="flex-grow-1" AllowReorder="true" />
+                        </MudList>
+                    </MudPaper>
+                </ChildContent>
+                <ItemRenderer>
+                    <MudListItem T="string" Text="@context.Name" />
+                </ItemRenderer>
+            </MudDropContainer>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    #region Parameters
+    [CascadingParameter]
+    public IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public ZombieTable Table { get; set; } = new();
+
+    [Parameter]
+    public ZombieIndex Index { get; set; } = new();
+
+    protected override void OnInitialized()
+    {
+        foreach ((int i, ZombieIndexField indexField) in Index.Fields.Index())
+        {
+            var field = Table.Fields.First(f => f.Name == indexField.Name);
+            _fields.Add(new ZombieIndexField() 
+            {
+                Id = Guid.CreateVersion7(), 
+                IndexId = Index.Id, 
+                Name = field.Name, 
+                Category = "Selected", 
+                Order = i
+            });
+        }
+
+        foreach ((int i, ZombieField field) in Table.Fields.Index())
+        {
+            if (Index.Fields.Any(a => a.Name == field.Name)) continue;
+            _fields.Add(new ZombieIndexField() 
+            { 
+                Id = Guid.CreateVersion7(),
+                IndexId = Index.Id,
+                Name = field.Name, 
+                Category = "Available",
+                Order = i
+            });
+        }
+
+        IsDisabledPrimary = Table.Indexes.Any(a => a.Primary && a.Id != Index.Id);
+        IsDisabledUnique = Table.Indexes.Any(a => a.Unique && a.Id != Index.Id);
+        IsDisabledClustered = Table.Indexes.Any(a => a.Clustered && a.Id != Index.Id);
+
+        if (!IsDisabledPrimary) Index.Primary = true;
+        if (!IsDisabledUnique) Index.Unique = true;
+        if (!IsDisabledClustered) Index.Clustered = true;
+        if (IsDisabledClustered) Index.NonClustered = true;
+    }
+
+    #endregion
+
+    #region State
+    MudForm form;
+    private List<ZombieIndexField> _fields = new();
+    private MudDropContainer<ZombieIndexField> _container = new();
+    private bool IsDisabledPrimary;
+    private bool IsDisabledUnique;
+    private bool IsDisabledClustered;
+    #endregion
+
+    #region Validation
+    private bool ItemSelector(ZombieIndexField item, string dropzone)
+    {
+        return item.Category == dropzone;
+    }
+    private void ItemUpdated(MudItemDropInfo<ZombieIndexField> dropItem)
+    {
+        dropItem.Item!.Category = dropItem.DropzoneIdentifier;
+        dropItem.Item.Order = dropItem.IndexInZone;
+
+        int newIdx = dropItem.IndexInZone;
+        int oldIdx = _fields.IndexOf(dropItem.Item);
+
+        var item = _fields[oldIdx];
+        _fields.RemoveAt(oldIdx);
+
+        if (newIdx >= _fields.Count)
+        {
+            _fields.Add(item);
+        }
+        else
+        {
+            _fields.Insert(newIdx, item);
+        }
+
+        for (int i = 0; i < _fields.Count; i++)
+        {
+            _fields[i].Order = i;
+        }
+        SetIndexName();
+    }
+    private void SetIndexName()
+    {
+        string tableName = Table.Name.ToLower();
+        string[] fields = _fields.Where(w => w.Category == "Selected")
+                                 .Select(s => s.Name.ToLower())
+                                 .ToArray();
+
+        Index.Name = $"idx_{tableName}_" + string.Join("_", fields);
+    }
+
+    private IEnumerable<string> ValidateName(string name)
+    {
+        if (Table.Indexes.Any(a => a.Name == name && a.Id != Index.Id)) yield return "Index name already exists";
+        yield return "";
+    }
+    private IEnumerable<string> ValidatePrimary(bool primary)
+    {
+        Index.Clustered = primary; //Default
+        IsDisabledClustered = primary;
+
+        if (!primary) { yield return ""; yield break; }
+        if (Table.Indexes.Any(a => a.Primary && a.Id != Index.Id)) yield return "Primary is already set on another index";
+
+        yield return "";
+    }
+
+    private IEnumerable<string> ValidateUnique(bool unique)
+    {
+        if (!unique) { yield return ""; yield break; }
+        if (Table.Indexes.Any(a => a.Unique && a.Id != Index.Id)) yield return "Primary is already set on another index";
+
+        yield return "";
+    }
+
+    private IEnumerable<string> ValidateClustered(bool clustered)
+    {
+        if (!clustered) { yield return ""; yield break; }
+        if (Table.Indexes.Any(a => a.Clustered && a.Id != Index.Id)) yield return "Clustering is already set on another index";
+
+        yield return "";
+    }
+
+    private IEnumerable<string> ValidateNonClustered(bool nonClustered)
+    {
+        if (!nonClustered) { yield return ""; yield break; }
+        if (Index.Clustered) yield return "Cannot be clustered and non-clustered is already set on another index";
+        yield return "";
+    }
+    #endregion
+
+    #region Dialog
+    private async Task Submit()
+    {
+        await form.Validate();
+        if (!form.IsValid) return;
+        _container.Refresh();
+        var fields = _container.Items.Where(s => s.Category == "Selected")
+                                     .OrderBy(o => o.Order)
+                                     .ToList();
+        if (fields.Count() == 0) return;
+        Index.Fields = fields;
+        MudDialog.Close(DialogResult.Ok(Index));
+    }
+
+    public void Cancel() => MudDialog.Cancel();
+    #endregion
+}
