@@ -4,11 +4,11 @@
 <MudDialog>
     <DialogContent>
         <MudDropContainer T="ZombieField"
-                          Items="@Table.Fields"
-                          ItemsSelector="@((_,_) => true)"
-                          ItemDropped="ItemUpdated"
-                          @ref="_container"
-                          Class="d-flex flex-wrap flex-grow-1">
+        Items="@Table.Fields"
+        ItemsSelector="@((_,_) => true)"
+        ItemDropped="ItemUpdated"
+        @ref="_container"
+        Class="d-flex flex-wrap flex-grow-1">
             <ChildContent>
                 <MudPaper Class="ma-4 flex-grow-1">
                     <MudList T="string" Class="d-flex flex-column mud-height-full">
@@ -48,6 +48,12 @@
         var indexOld = Table.Fields.IndexOf(dropItem.Item!);
         Table.Fields.RemoveAt(indexOld);
         Table.Fields.Insert(dropItem.IndexInZone, dropItem.Item!);
+
+        foreach((int index, ZombieField field) in Table.Fields.Index())
+        {
+            field.Order = index;
+        }
+
     }
     #endregion
 

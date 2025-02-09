@@ -15,7 +15,10 @@ public class ServiceTableServer : IZombieTable
         var tables = await _db.ZombieTable.AsNoTracking().ToListAsync();
         foreach(var table in tables)
         {
-            table.Fields = await _db.ZombieField.Where(w => w.TableId == table.Id).ToListAsync();
+            table.Fields = await _db.ZombieField
+                                    .Where(w => w.TableId == table.Id)
+                                    .OrderBy(o => o.Order)
+                                    .ToListAsync();
             table.Indexes = await _db.ZombieIndex.Where(w => w.TableId == table.Id).ToListAsync();
             foreach (var index in table.Indexes)
             {

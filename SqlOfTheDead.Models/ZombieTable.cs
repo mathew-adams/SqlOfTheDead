@@ -25,6 +25,7 @@ public class ZombieField
     public string DefaultValue { get; set; } = "";
     public bool AllowNulls { get; set; }
     public bool IsIdentity { get; set; }
+    public int Order { get; set; }
 
     [JsonIgnore]
     [ForeignKey(nameof(TableId))]

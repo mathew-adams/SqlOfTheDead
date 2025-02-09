@@ -110,6 +110,8 @@
     {
         await form.Validate();
         if (!form.IsValid) return;
+        Field.Order = Table.Fields.Count() + 1;
+
         MudDialog.Close(DialogResult.Ok(Field));
     }
 
