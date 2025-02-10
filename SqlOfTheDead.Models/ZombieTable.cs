@@ -9,6 +9,7 @@ public class ZombieTable
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = "";
+    public DateTime Created { get; set; }
     public virtual List<ZombieField> Fields { get; set; } = [];
     public virtual List<ZombieIndex> Indexes { get; set; } = [];
 }
@@ -44,6 +45,7 @@ public class ZombieIndex
     public bool Unique { get; set; }
     public bool Clustered { get; set; }
     public bool NonClustered { get; set; }
+    public int Order { get; set; }
     public virtual List<ZombieIndexField> Fields { get; set; } = [];
 
     [JsonIgnore]

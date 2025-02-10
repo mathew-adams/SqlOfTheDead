@@ -16,6 +16,7 @@
             <th>Table Name</th>
             <th>Fields</th>
             <th>Indexes</th>
+            <th>Created</th>
             <th></th>
             <th></th>
             <th></th>
@@ -29,6 +30,7 @@
                 <td>@table.Name</td>
                 <td>@(@table.Fields.Count())</td>
                 <td>@(@table.Indexes.Count())</td>
+                <td>@table.Created</td>
                 <td width="10"><MudIconButton Size="Size.Small" title="Save to database" Icon="@Icons.Material.Filled.Save" aria-label="Edit" OnClick="() => Save(table)" /></td>
                 <td width="15"><MudIconButton Size="Size.Small" title="Delete from database" Icon="@Icons.Material.Filled.Delete" Disabled="@DisableDelete(table.Id)" aria-label="Delete" OnClick="() => Delete(table)" /></td>
                 <td width="10"><MudIconButton Size="Size.Small" title="Edit table" Icon="@Icons.Material.Filled.Edit" aria-label="Edit" OnClick="() => Edit(table)" /></td>
@@ -61,7 +63,7 @@ Variant="Variant.Outlined"
     {
         var parms = new DialogParameters<TableDetail>()
         {
-            {x => x.Table, new ZombieTable(){ Id = Guid.CreateVersion7() } }
+            {x => x.Table, new ZombieTable(){ Id = Guid.CreateVersion7(), Created = DateTime.Now } }
         };
 
         var dialog = await DialogService.ShowAsync<TableDetail>("Add Table", parms, UI.DialogFullWidth);

@@ -203,6 +203,7 @@
                                      .ToList();
         if (fields.Count() == 0) return;
         Index.Fields = fields;
+        Index.Order = Table.Indexes.Count() + 1;
         MudDialog.Close(DialogResult.Ok(Index));
     }
 

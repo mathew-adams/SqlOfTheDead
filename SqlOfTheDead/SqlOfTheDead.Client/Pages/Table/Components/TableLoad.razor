@@ -9,11 +9,13 @@
                 <MudTh>Name</MudTh>
                 <MudTh>Fields</MudTh>
                 <MudTh>Indexes</MudTh>
+                <MudTh>Created</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Name">@context.Name</MudTd>
                 <MudTd DataLabel="Fields">@(@context.Fields.Count())</MudTd>
                 <MudTd DataLabel="Indexes">@(@context.Indexes.Count())</MudTd>
+                <MudTd DataLabel="Created">@context.Created</MudTd>
             </RowTemplate>
             <FooterContent>
                 <MudTd colspan="5">Select All</MudTd>

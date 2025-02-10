@@ -7,6 +7,7 @@
 	[Unique] bit not null,
 	[Clustered] bit not null,
 	[NonClustered] bit not null,
+	[Order] int not null,
 	[Version] rowversion not null,
 	constraint idx_zombieindex_id primary key clustered ([Id]),
 	index idx_zombieindex_tableid nonclustered ([TableId]),

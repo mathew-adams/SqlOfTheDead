@@ -2,17 +2,17 @@
 
 <MudDialog>
     <DialogContent>
-        <MudDropContainer T="ZombieField"
-        Items="@Table.Fields"
-        ItemsSelector="@((_,_) => true)"
-        ItemDropped="ItemUpdated"
-        @ref="_container"
-        Class="d-flex flex-wrap flex-grow-1">
+        <MudDropContainer T="ZombieIndex"
+                          Items="@Table.Indexes"
+                          ItemsSelector="@((_,_) => true)"
+                          ItemDropped="ItemUpdated"
+                          @ref="_container"
+                          Class="d-flex flex-wrap flex-grow-1">
             <ChildContent>
                 <MudPaper Class="ma-4 flex-grow-1">
                     <MudList T="string" Class="d-flex flex-column mud-height-full">
                         <MudListSubheader>Available</MudListSubheader>
-                        <MudDropZone T="ZombieField" Identifier="Available" Class="flex-grow-1" AllowReorder="true" />
+                        <MudDropZone T="ZombieIndex" Identifier="Available" Class="flex-grow-1" AllowReorder="true" />
                     </MudList>
                 </MudPaper>
             </ChildContent>
@@ -38,19 +38,19 @@
     #endregion
 
     #region State
-    private MudDropContainer<ZombieField> _container;
+    private MudDropContainer<ZombieIndex> _container;
     #endregion
 
     #region Validation
-    private void ItemUpdated(MudItemDropInfo<ZombieField> dropItem)
+    private void ItemUpdated(MudItemDropInfo<ZombieIndex> dropItem)
     {
-        var indexOld = Table.Fields.IndexOf(dropItem.Item!);
-        Table.Fields.RemoveAt(indexOld);
-        Table.Fields.Insert(dropItem.IndexInZone, dropItem.Item!);
+        var indexOld = Table.Indexes.IndexOf(dropItem.Item!);
+        Table.Indexes.RemoveAt(indexOld);
+        Table.Indexes.Insert(dropItem.IndexInZone, dropItem.Item!);
 
-        foreach((int index, ZombieField field) in Table.Fields.Index())
+        foreach ((int position, ZombieIndex index) in Table.Indexes.Index())
         {
-            field.Order = index;
+            index.Order = position;
         }
 
     }
@@ -63,5 +63,4 @@
     }
     public void Cancel() => MudDialog.Cancel();
     #endregion
-
 }
