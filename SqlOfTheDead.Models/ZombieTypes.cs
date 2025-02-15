@@ -33,8 +33,8 @@ public static class ZombieTypes
         yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Secondary_Id", Type = "Integer", Order = 1 };
         yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Name", Type = "String", Length = "10", Order = 2 };
         yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Created", Type = "Date", Length = "7", DefaultValue = "'9999-12-31'", Order = 3 };
-        yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Version", Type = "RowVersion", DefaultValue = "8", Order = 4 };
-        yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Active", Type = "Boolean", DefaultValue = "1", Order = 5 };
+        yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Active", Type = "Boolean", DefaultValue = "1", Order = 4 };
+        yield return new ZombieField() { Id = Guid.CreateVersion7(), TableId = tableId, Name = "Version", Type = "RowVersion", DefaultValue = "8", Order = 5 };
     }
 
     public static SqlDbType GetSqlDbType(string name)
@@ -80,10 +80,13 @@ public static class ZombieTypes
             if (field.Type == "RowVersion") sb.Append("rowversion");
             else sb.Append(sqlType.ToString().ToLower());
             hasLength = ZombieTypes.HasLength(field.Type);
+            
             if (hasLength) sb.Append('(').Append(field.Length).Append(')');
+            
             if (field.IsIdentity) sb.Append(" identity (1,1)");
             else if (field.DefaultValue is string dv && !string.IsNullOrEmpty(dv) && field.Type != "RowVersion") sb.Append(" default ").Append(dv);
-            else if (field.AllowNulls) sb.Append(" null");
+            
+            if (field.AllowNulls) sb.Append(" null");
             else if (!field.AllowNulls) sb.Append(" not null");
 
             sb.Append(',');

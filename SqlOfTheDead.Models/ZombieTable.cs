@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 
@@ -12,6 +13,9 @@ public class ZombieTable
     public DateTime Created { get; set; }
     public virtual List<ZombieField> Fields { get; set; } = [];
     public virtual List<ZombieIndex> Indexes { get; set; } = [];
+
+    [Timestamp]
+    public byte[] Version { get; set; }
 }
 
 [DebuggerDisplay("Name = {Name}, Type = {Type}")]
